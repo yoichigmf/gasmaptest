@@ -219,11 +219,17 @@ body {
     }
      
     .sidebar-toggle.left {
-    right: -1.5em;
+      right: 0em;
+
+    /*right: -1.5em;
+    */
     }
      
     .sidebar-toggle.right {
+      left: 0em;
+    /*
     left: -1.5em;
+    */
     }
      
     .sidebar-toggle:hover {
@@ -315,9 +321,10 @@ body {
             menu
           </button>
           <ul class="nav__wrapper">
-            <li class="nav__item"><a href="#">表示位置指定</a></li>
-            <li class="nav__item"><a href="#">データシート指定</a></li>
-            <li class="nav__item"><a href="#">表示情報指定</a></li>
+            <li class="nav__item"><a href="#" onclick="toggleSidebar('left')"  >表示位置指定</a></li>
+         
+            <li class="nav__item"><a href="#"onclick="toggleSidebar('left')"  >表示情報指定</a></li>
+            <li class="nav__item"><a href="#" onclick="toggleSidebar('right')" >データシート指定</a></li>
             <li class="nav__item"><a href="#"   onclick="toggleSidebar('right')"   >表示地図指定</a></li>
             <!--
             <li class="nav__item"><a href="#">Contact</a></li>
@@ -345,13 +352,10 @@ body {
         class="sidebar-toggle rounded-rect left"
         onclick="toggleSidebar('left')"
         >
-        &rarr;
+        &larr;
         </div>
 
 
-            <div  id="sheetlist">
-
-            </div>
         </div>
       </div>
 
@@ -370,13 +374,18 @@ body {
               </select>
           
           </div>
+
+          
+          <div  id="sheetlist">
+
+          </div>
  
 
         <div
         class="sidebar-toggle rounded-rect right"
         onclick="toggleSidebar('right')"
         >
-        &larr;
+        &rarr;
         </div>
         </div>
     </div>
