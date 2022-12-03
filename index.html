@@ -663,7 +663,7 @@ body {
 
                 function  GetNewSheetGeoJson( sheetname ){
 
-                    alert( sheetname );
+                   // alert( sheetname );
 
 
                     
@@ -683,6 +683,10 @@ body {
                          var  gj = request.response;
       
                          var gfeature = JSON.parse(gj);
+
+                         map.getSource('rpoints').setData(gfeature);
+                     
+
       
                          if ( gfeature["features"].length > 1 ) {  //  地物があるか
                          var bbox = turf.bbox(gfeature);
