@@ -258,6 +258,24 @@ body {
 
   </style>
 
+  <style>
+  #basemaps-selecter {
+    position: absolute;
+     top:30px;
+   }
+
+   #sheetlist {
+    position: absolute;
+     top:30px;
+     font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+   }
+
+   
+  </style>
+
+
+
 <style>
   .listing-group {
   font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
@@ -315,7 +333,7 @@ body {
     <!-- Header Start -->
     <header class="site-header">
       <div class="wrapper site-header__wrapper">
-        <a href="#" class="brand">災害情報収集システム</a>
+        <a href="#" class="brand"><div id="title_text">災害情報収集システム</div></a>
         <nav class="nav">
           <button class="nav__toggle" aria-expanded="false" type="button">
             menu
@@ -324,8 +342,8 @@ body {
             <li class="nav__item"><a href="#" onclick="toggleSidebar('left')"  >表示位置指定</a></li>
          
             <li class="nav__item"><a href="#"onclick="toggleSidebar('left')"  >表示情報指定</a></li>
-            <li class="nav__item"><a href="#" onclick="toggleSidebar('right')" >データシート指定</a></li>
-            <li class="nav__item"><a href="#"   onclick="toggleSidebar('right')"   >表示地図指定</a></li>
+            <li class="nav__item"><a href="#" onclick="sheetsitei()" >データシート指定</a></li>
+            <li class="nav__item"><a href="#"   onclick="chizusitei()"   >表示地図指定</a></li>
             <!--
             <li class="nav__item"><a href="#">Contact</a></li>
             -->
@@ -338,6 +356,46 @@ body {
 
 
 
+    <script>
+
+      var VSheetNames = [];
+
+//    右エリアのクリア
+      function  clearrightdisplay(){
+
+        const bssel = document.getElementById("basemaps-selecter");
+        
+        bssel.style.visibility ="hidden";
+
+        const slist  = document.getElementById("sheetlist");
+
+        sheetlist.style.visibility ="hidden";
+        
+
+      }
+
+      function sheetsitei(){
+           clearrightdisplay();
+
+           slistp = document.getElementById("sheetlist");
+
+           slistp.style.visibility ="visible";
+
+           toggleSidebar('right');
+       }
+
+
+      function chizusitei(){
+
+        clearrightdisplay();
+
+        bssel = document.getElementById("basemaps-selecter");
+
+        bssel.style.visibility ="visible";
+
+        toggleSidebar('right');
+      }
+    </script>
 
     <div id="map">
 
@@ -380,6 +438,9 @@ body {
 
           </div>
  
+          <div id="debugh">
+
+          </div>
 
         <div
         class="sidebar-toggle rounded-rect right"
@@ -497,8 +558,8 @@ body {
       
       
              function pos_success(pos){
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
+               const lat = pos.coords.latitude;
+               const lng = pos.coords.longitude;
           //const accuracy = pos.coords.accuracy;
       
               map.flyTo( {centor:[lng,lat], zoom:10, speed:0.3});
@@ -570,8 +631,15 @@ body {
                     var stlist = JSON.parse(slist);
       
                     var sheets = document.getElementById("sheetlist");
+
+                    ip = 0;
+                    for ( const sn of stlist){
+                      VSheetNames[ip] = sn[0];
+                      ++ip;
+
+                    }
       
-      
+                  
                     sheets.innerHTML = makeSheetList(stlist);
       
                 }
@@ -581,21 +649,97 @@ body {
       
                 }    //onload  geojson
       
-      
+                function  changesheet( sheetidx ){
+
+                    sname = VSheetNames[sheetidx];
+
+                    GetNewSheetGeoJson( escape( sname ));
+
+
+                    //alert( sheetidx + " " + sname);
+                }
                 
+
+
+                function  GetNewSheetGeoJson( sheetname ){
+
+                    alert( sheetname );
+
+
+                    
+      
+                    GetGJsonURL = GetFURL + "&sheet=" + sheetname
+                    var request = new XMLHttpRequest();
+                    request.open("GET",  GetGJsonURL, true);
+                    request.send();
+      
+                    request.responseTyoe = 'json';
+      
+      
+        
+      
+      
+                   request.onload = function() {   //onload
+                         var  gj = request.response;
+      
+                         var gfeature = JSON.parse(gj);
+      
+                         if ( gfeature["features"].length > 1 ) {  //  地物があるか
+                         var bbox = turf.bbox(gfeature);
+         
+                         map.fitBounds( bbox );
+      
+      
+                         }
+                        else {
+      
+                           if (  gfeature["features"].length == 1 ) {
+                               gf = gfeature["features"][0]["geometry"]["coordinates"];
+      
+                               lng = gf[0];
+                               lat = gf[1];
+                               map.flyTo( {centor:[lng,lat], zoom:15, speed:0.3});
+      
+                            }
+                       //  else {
+                       //            navigator.geolocation.getCurrentPosition(pos_success,pos_fail);
+                        //       }
+                        }
+      
+
+                }
+
+
+              }
+
+
+                
+
                 function makeSheetList( sarray ){
       
                   var reta = "<ul>"
       
+                    let cn = 0;
                     for ( const sh of sarray ){
-      
-                      reta = reta + "<li>" + sh ;
+
+
+                      var tst = sh[0].slice( 0, 1 );
+
+                      if (  tst  !=  '#' ){
+                        reta = reta + '<li><a href="#" onclick=changesheet(' + "\'"  + cn + "\') >" + sh[0] + ' </a> ' ;
+
+                      }
+
+                      ++cn;
+                     
                     }
       
       
       
       
                   reta = reta + "</ul>";
+
+                 // alert(reta);
       
                   return reta;
                 }
