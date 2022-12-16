@@ -97,7 +97,9 @@ body {
 
 .site-header {
   position: relative;
-  background-color: #def7ff; }
+  background-color: #def7ff; 
+  z-index:10000;
+ }
 
 .site-header__wrapper {
   padding-top: 1rem;
@@ -176,7 +178,9 @@ body {
   </style>
 
   <style>
-
+    #right {
+      z-index:20000;
+    }
 
     .rounded-rect {
     background: white;
@@ -330,8 +334,11 @@ body {
 
   </head>
   <body>
-    <!-- Header Start -->
+    <!-- Header Start 
     <header class="site-header">
+       -->
+
+    <div id="header" class="site-header">
       <div class="wrapper site-header__wrapper">
         <a href="#" class="brand"><div id="title_text">災害情報収集システム</div></a>
         <nav class="nav">
@@ -350,8 +357,12 @@ body {
           </ul>
         </nav>
       </div>
+
+    </div>
+
+     <!--
     </header>
-    <!-- Header End -->
+    Header End -->
 
 
 
@@ -380,6 +391,10 @@ body {
            slistp = document.getElementById("sheetlist");
 
            slistp.style.visibility ="visible";
+
+           navToggle.setAttribute("aria-expanded", "false");
+           navWrapper.classList.add("inactive");
+      
 
            toggleSidebar('right');
        }
@@ -754,7 +769,7 @@ body {
                 map.addControl(new maplibregl.ScaleControl() );
       
       
-      
+             //   背景図選択　（種類が増えたら改造必要)
               const setBasemap = (name) => {
                   // Instantiate the given basemap layer.
                //   map.setStyle(base_maps[name]);
@@ -767,50 +782,42 @@ body {
                }
       
               };
+
+              const basemapsSelectElement = document.querySelector("#basemaps");
+      
+                        basemapsSelectElement.addEventListener("change", (e) => {
+                        setBasemap(e.target.value);
+
+       
+
+                      });
+
       
       
       
               let navToggle = document.querySelector(".nav__toggle");
-let navWrapper = document.querySelector(".nav__wrapper");
+              let navWrapper = document.querySelector(".nav__wrapper");
 
-navToggle.addEventListener("click", function () {
-  if (navWrapper.classList.contains("active")) {
-    this.setAttribute("aria-expanded", "false");
-    this.setAttribute("aria-label", "menu");
-    navWrapper.classList.remove("active");
-  } else {
-    navWrapper.classList.add("active");
-    this.setAttribute("aria-label", "close menu");
-    this.setAttribute("aria-expanded", "true");
-  }
-});
+               navToggle.addEventListener("click", function () {
+               if (navWrapper.classList.contains("active")) {
+                        this.setAttribute("aria-expanded", "false");
+                        this.setAttribute("aria-label", "menu");
+                   navWrapper.classList.remove("active");
+                } else {
+                     navWrapper.classList.add("active");
+                     this.setAttribute("aria-label", "close menu");
+                     this.setAttribute("aria-expanded", "true");
+                   }
+               });
       
        
-      const basemapsSelectElement = document.querySelector("#basemaps");
-      
-              basemapsSelectElement.addEventListener("change", (e) => {
-                  setBasemap(e.target.value);
-       
-                 // map.triggerRepaint();
-      
-              });
+
+
       
       
       
       
-      
-      
-      
-      
-      //loadfgb();
-      
-      
-      
-      //  load flat geobuff file
-      //async function loadfgb(){
-      
-      
-             // const response = await fetch("./data/tokyorisk5.fgb")
+ 
               map.on("load", async () => {
       
                         
