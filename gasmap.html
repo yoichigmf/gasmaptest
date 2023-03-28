@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html>
+<head>  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gas Map</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
+
+
+    <style>
+   body { margin:0; padding:0; }
+
+   #map {
+  position: absolute;
+  top: 50px;
+  bottom: 0;
+  width: 100%;
+  z-index:1;
+}
+
+    </style>
+</head>
+<body>
+
+    
+   
+<!--
+// 地図領域を全画面にする
+
+// add menu bar here
+-->
+    <div id="menuheadder" style="width: 100%; height: 60px">     
+        <ul class="nav nav-tabs">
+            <li class="active"><a href="#">Home</a></li>
+            <li><a href="#">Menu 1</a></li>
+            <li><a href="#">Menu 2</a></li>
+            <li><a href="#">Menu 3</a></li>
+        </ul>
+
+
+    </div>
+
+
+   <div id="map" style="width: 100%; height: 100%">
+    // メニューバーを100ドットの高さで最上部におき、のこりの下部全部を
+    // 地図表示に使う
+    
+    
+     
+
+
+    <div id="left" class="sidebar flex-center left collapsed">
+        <div class="sidebar-content rounded-rect flex-center">
+
+        
+    
+        
+        <div
+        class="sidebar-toggle rounded-rect left"
+        onclick="toggleSidebar('left')"
+        >
+        &larr;
+        </div>
+
+
+        </div>
+      </div>
+
+
+      <div id="right" class="sidebar flex-center right collapsed">
+        <div class="sidebar-content rounded-rect flex-center">
+
+
+          <div id="basemaps-selecter">
+
+            <select id="basemaps">
+       
+              <option value="pale">地理院タイル skelton</option>
+          
+              <option value="gsi_photo">地理院タイル写真</option>
+              </select>
+          
+          </div>
+
+          
+          <div  id="sheetlist">
+
+          </div>
+ 
+          <div id="debugh">
+
+          </div>
+
+        <div
+        class="sidebar-toggle rounded-rect right"
+        onclick="toggleSidebar('right')"
+        >
+        &rarr;
+        </div>
+        </div>
+    </div>
+   
+
+    </div>
+
+    <script>
+
+      var VSheetNames = [];
+
+      var dpurl = "https://script.google.com/macros/s/AKfycbyuc0ZCyNup0Qgw9a6XlVUfRVrAYtxQe52ETXzAKeI2NTsPJwoldHAIsLbXnSYpgokS/exec";
+      
+      var   GetFURL  = dpurl + "?cmd=GETFEATURES";
+  
+      var   GETSHEETS = dpurl + "?cmd=GETSHEETS";
+
+
+      var request = new XMLHttpRequest();
+          request.open("GET", GetFURL, true);
+          request.send();
+      
+          request.responseTyoe = 'json';
+      
+      
+          var map = new maplibregl.Map({
+                  container: "map",
+                  style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/main/style/skeleton.json',
+                  center: [139.581367, 35.695671],
+                  zoom: 11,
+                  maxZoom: 18,
+              });
+      
+      
+          request.onload = function() {   //onload
+             var  gj = request.response;
+      
+             var gfeature = JSON.parse(gj);
+      
+             if ( gfeature["features"].length > 1 ) {  //  地物があるか
+                var bbox = turf.bbox(gfeature);
+         
+                map.fitBounds( bbox );
+      
+      
+             }
+             else {
+      
+              if (  gfeature["features"].length == 1 ) {
+                   gf = gfeature["features"][0]["geometry"]["coordinates"];
+      
+                   lng = gf[0];
+                   lat = gf[1];
+                   map.flyTo( {centor:[lng,lat], zoom:15, speed:0.3});
+      
+              }
+              else {
+              navigator.geolocation.getCurrentPosition(pos_success,pos_fail);
+              }
+             }
+      
+      
+           
+      
+             function pos_fail(pos){
+                //  alert('位置情報の取得に失敗しました。エラーコード：');
+             }
+      
+      
+             function pos_success(pos){
+               const lat = pos.coords.latitude;
+               const lng = pos.coords.longitude;
+          //const accuracy = pos.coords.accuracy;
+      
+              map.flyTo( {centor:[lng,lat], zoom:10, speed:0.3});
+          //$('#loc').text(`緯度：${lat} 経度：${lng}`);
+          //$('#accuracy').text(accuracy);
+            }
+      
+      
+      
+              map.loadImage(
+                  'https://raw.githubusercontent.com/yoichigmf/lbmap/511c8c3b03f785025f33c3e77ca313e72c1e737e/sprite/marker.png',
+                      function (error, image) {
+                      if (error) throw error;
+                        map.addImage('pin', image);
+      
+                        map.addSource( 
+                           'rpoints', {
+                              'type': 'geojson',
+                              'data': gfeature
+                                }
+      
+                            );
+      
+                        map.addLayer({
+                            'id': 'points',
+                            'type': 'symbol',
+                            'source': 'rpoints',
+                            'layout': {
+                            'icon-image': 'pin',
+                            'icon-size': 0.7
+                            }
+                          });
+      
+      
+      
+                          map.on('click', 'points', function (e) {
+                              var coordinates = e.features[0].geometry.coordinates.slice();
+      
+      
+         
+      
+             
+                              var description = CreatePropertiesHTML( e.features);
+      
+       
+                              new maplibregl.Popup()
+                                           .setLngLat(coordinates)
+                                           .setHTML(description)
+                                           .addTo(map);
+      
+                               });
+        
+      
+                        }
+                  );
+      
+      
+             
+                   
+                  //  get sheets list
+                request.open("GET", GETSHEETS, true);
+                request.send();
+      
+                request.responseTyoe = 'json';
+      
+                request.onload = function() {   //onload
+                    var  slist = request.response;
+      
+                    var stlist = JSON.parse(slist);
+      
+                    var sheets = document.getElementById("sheetlist");
+
+                    ip = 0;
+                    for ( const sn of stlist){
+                      VSheetNames[ip] = sn[0];
+                      ++ip;
+
+                    }
+      
+                  
+                    sheets.innerHTML = makeSheetList(stlist);
+      
+                }
+      
+             
+      
+      
+                }    //onload  geojson
+      
+                function  changesheet( sheetidx ){
+
+                    sname = VSheetNames[sheetidx];
+
+                    GetNewSheetGeoJson( escape( sname ));
+
+
+                    //alert( sheetidx + " " + sname);
+                }
+                
+
+
+                function  GetNewSheetGeoJson( sheetname ){
+
+                   // alert( sheetname );
+
+
+                    
+      
+                    GetGJsonURL = GetFURL + "&sheet=" + sheetname
+                    var request = new XMLHttpRequest();
+                    request.open("GET",  GetGJsonURL, true);
+                    request.send();
+      
+                    request.responseTyoe = 'json';
+      
+      
+        
+      
+      
+                   request.onload = function() {   //onload
+                         var  gj = request.response;
+      
+                         var gfeature = JSON.parse(gj);
+
+                         map.getSource('rpoints').setData(gfeature);
+                     
+
+      
+                         if ( gfeature["features"].length > 1 ) {  //  地物があるか
+                         var bbox = turf.bbox(gfeature);
+         
+                         map.fitBounds( bbox );
+      
+      
+                         }
+                        else {
+      
+                           if (  gfeature["features"].length == 1 ) {
+                               gf = gfeature["features"][0]["geometry"]["coordinates"];
+      
+                               lng = gf[0];
+                               lat = gf[1];
+                               map.flyTo( {centor:[lng,lat], zoom:15, speed:0.3});
+      
+                            }
+                       //  else {
+                       //            navigator.geolocation.getCurrentPosition(pos_success,pos_fail);
+                        //       }
+                        }
+      
+
+                }
+
+
+              }
+
+
+                
+
+                function makeSheetList( sarray ){
+      
+                  var reta = "<ul>"
+      
+                    let cn = 0;
+                    for ( const sh of sarray ){
+
+
+                      var tst = sh[0].slice( 0, 1 );
+
+                      if (  tst  !=  '#' ){
+                        reta = reta + '<li><a href="#" onclick=changesheet(' + "\'"  + cn + "\') >" + sh[0] + ' </a> ' ;
+
+                      }
+
+                      ++cn;
+                     
+                    }
+      
+      
+      
+      
+                  reta = reta + "</ul>";
+
+                 // alert(reta);
+      
+                  return reta;
+                }
+      
+      
+      
+                map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+                map.addControl(new maplibregl.ScaleControl() );
+      
+      
+             //   背景図選択　（種類が増えたら改造必要)
+              const setBasemap = (name) => {
+                  // Instantiate the given basemap layer.
+               //   map.setStyle(base_maps[name]);
+               if (name == 'gsi_photo'){
+                  console.log('gsi');
+                  map.setLayoutProperty(name, 'visibility', 'visible');
+               }
+               else {
+                map.setLayoutProperty('gsi_photo', 'visibility', 'none');
+               }
+      
+              };
+
+              const basemapsSelectElement = document.querySelector("#basemaps");
+      
+                        basemapsSelectElement.addEventListener("change", (e) => {
+                        setBasemap(e.target.value);
+
+       
+
+                      });
+
+      
+      
+      
+              let navToggle = document.querySelector(".nav__toggle");
+              let navWrapper = document.querySelector(".nav__wrapper");
+
+               navToggle.addEventListener("click", function () {
+               if (navWrapper.classList.contains("active")) {
+                        this.setAttribute("aria-expanded", "false");
+                        this.setAttribute("aria-label", "menu");
+                   navWrapper.classList.remove("active");
+                } else {
+                     navWrapper.classList.add("active");
+                     this.setAttribute("aria-label", "close menu");
+                     this.setAttribute("aria-expanded", "true");
+                   }
+               });
+      
+       
+
+
+      
+      
+      
+      
+ 
+              map.on("load", async () => {
+      
+                        
+              map.addSource('gsi_raster', {
+        
+                    'type': 'raster',
+                    tiles: [
+                          'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',
+                      ],
+                    'tileSize': 256,
+                     'attribution':
+                     '国土地理院',
+        
+                 });
+      
+              map.addLayer({
+                  'id':'gsi_photo',
+                  'type':'raster',
+                  'source':'gsi_raster',
+                    'minzoom':5,
+                    'maxzoom':18,
+                    'layout':{
+                        'visibility':'none'
+                        },
+                    paint:{   "raster-opacity": 1.0}
+      
+                  });
+                });
+      
+      
+        
+      
+      function  CreatePropertyHTML( prp ){
+      
+      var rhtml = "<table><TR><TH>項目</TH><TH>値</TH></TR>";
+      
+      
+      rhtml = rhtml + "<TR><TD>ユーザ名</TD><TD>";
+      
+      rhtml = rhtml + prp["user"];
+      rhtml = rhtml + "</TD></TR>";
+      
+      rhtml = rhtml + "<TR><TD>日時</TD><TD>";
+      
+      rhtml = rhtml + prp["date"];
+      rhtml = rhtml + "</TD></TR>";
+      
+      
+      rhtml = rhtml + "<TR><TD>住所</TD><TD>";
+      
+      rhtml = rhtml + prp["text"];
+      rhtml = rhtml + "</TD></TR>";
+      
+      
+      var pobj = JSON.parse(prp["proplist"]);
+      
+      
+      rhtml = rhtml + "<TR><TD>text</TD><TD>";
+      
+      //rhtml = rhtml + " size =" + prp["proplist"].length  + " ";
+      rhtml = rhtml + pobj.length;
+      
+      
+      rhtml = rhtml + "</TD></TR>";
+      
+      if ( pobj.length > 0 ){
+      
+      
+       for ( var rec of  pobj ) {
+          rhtml = rhtml + "<TR><TD>日時</TD><TD>";
+      
+          
+          rhtml = rhtml + rec["date"];
+          rhtml = rhtml + "</TD></TR>";
+      
+          if ( rec["kind"] == "image"){
+               rhtml = rhtml + "<TR><TD>画像</TD><TD>";
+      
+               var tgurl = MakeDirectURL( rec["url"]);
+      
+      
+             rhtml = rhtml + "<img src=\""+ tgurl + "\"  width=\"200\" />";
+      
+              // rhtml = rhtml + tgurl;
+      
+               rhtml = rhtml + "</TD></TR>";
+          }
+      
+           if ( rec["kind"] == "video"){
+               rhtml = rhtml + "<TR><TD>動画</TD><TD>";
+      
+              // var tgurl = MakeDirectURL( rec["url"]);
+      
+      
+            //　rhtml = rhtml + "<img src=\""+ tgurl + "\"  width=\"200\" />";
+      
+               rhtml = rhtml + "<a href=\"" + rec["url"] + "\" target=\"movp\">動画</a>";
+      
+               rhtml = rhtml + "</TD></TR>";
+          }
+      
+          if ( rec["kind"] == "text"){
+      
+          rhtml = rhtml + "<TR><TD>text</TD><TD>";
+      
+          rhtml = rhtml + rec["text"];
+          rhtml = rhtml + "</TD></TR>";
+          }
+       }
+      
+      
+      }
+      
+      
+      rhtml = rhtml + "</table>";
+      
+      return rhtml;
+      //var description = e.features[0].properties["user"];
+      }
+      
+      // change dropbox url 
+      function MakeDirectURL( url ){
+      
+        
+      nurl  = url.replace("www.dropbox.com", "dl.dropboxusercontent.com");
+      
+      nnurl = nurl.replace('?dl=0', '');
+      
+      return nnurl;
+      
+      }
+      
+      
+      
+      function CreatePropertiesHTML( features  ){
+        if ( features.length > 0 ) {
+      
+           var  rethtml = " ";
+      
+           for ( var  feature of features ){
+               var thtml = CreatePropertyHTML( feature.properties );
+      
+               rethtml = rethtml + thtml;
+              
+           }
+      
+           return rethtml;
+      
+        }
+        else {
+          return( "無し")
+        }
+      }
+          
+
+
+    </script>
+    
+ </body>
+</html>
